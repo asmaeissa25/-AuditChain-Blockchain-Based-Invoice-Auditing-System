@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AuditChain Pro | Système de Certification Blockchain</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <style>
+        :root {
+            --deep-navy: #0E1A27;
+            --royal-blue: #5363EE;
+            --lime: #C2F750;
+            --glass: rgba(255, 255, 255, 0.03);
+        }
+
+        body {
+            background: var(--deep-navy);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        .navbar-main {
+            padding: 20px 50px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-text {
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: var(--royal-blue);
+            text-decoration: none;
+        }
+
+        .logo-text span {
+            color: var(--lime);
+        }
+
+        .portal {
+            height: calc(100vh - 150px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sb-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            width: 320px;
+            padding: 40px;
+            border-radius: 30px;
+            border: 1px solid rgba(83, 99, 238, 0.1);
+            text-align: center;
+            transition: 0.4s;
+            cursor: pointer;
+        }
+
+        .sb-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--lime);
+        }
+
+        .sb-card i {
+            font-size: 3.5rem;
+            color: var(--royal-blue);
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .btn-acc {
+            background: var(--royal-blue);
+            border: none;
+            padding: 10px 30px;
+            border-radius: 12px;
+            font-weight: 700;
+            color: white;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 4px solid var(--lime);
+        }
+
+        .data-panel {
+            background: var(--glass);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        input.form-control {
+            background: rgba(0, 0, 0, 0.2) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+        }
+
+        .badge-status {
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            border: 1px solid #ffc107;
+        }
+
+        .status-approved {
+            background: rgba(194, 247, 80, 0.2);
+            color: var(--lime);
+            border: 1px solid var(--lime);
+        }
+
+        .status-rejected {
+            background: rgba(255, 77, 77, 0.2);
+            color: #ff4d4d;
+            border: 1px solid #ff4d4d;
+        }
+
+        .btn-action {
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.9rem;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <div id="login-screen">
+        <nav class="navbar-main"><a class="logo-text">Audit<span>Chain</span></a></nav>
+        <div class="portal">
+            <div class="container d-flex justify-content-center gap-5 text-center">
+                <div>
+                    <div class="sb-card" onclick="auth('comptable')">
+                        <i class="bi bi-calculator"></i>
+                        <h3>Comptable</h3>
+                        <p class="text-muted small">Emetteur (Port 5000)</p>
+                    </div>
+                    <button class="btn-acc" onclick="auth('comptable')">Accéder</button>
+                </div>
+                <div>
+                    <div class="sb-card" onclick="auth('auditeur')">
+                        <i class="bi bi-shield-lock"></i>
+                        <h3>Auditeur</h3>
+                        <p class="text-muted small">Vérificateur (Port 5001)</p>
+                    </div>
+                    <button class="btn-acc" onclick="auth('auditeur')">Accéder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-view" style="display:none">
+        <nav class="navbar-main">
+            <a class="logo-text"><span id="role-display"></span> <span>Explorer</span></a>
+            <button class="btn btn-sm btn-outline-danger" onclick="location.reload()">Quitter</button>
+        </nav>
+        <div class="container mt-5">
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h5><span id="count-tx">0</span></h5><small>TRANSACTIONS TOTALES</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card" style="border-left-color:var(--royal-blue)">
+                        <h5><span id="sum-tx">0</span> MAD</h5><small>VALEUR SCELLÉE</small>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div id="input-col" class="col-lg-4">
+                    <div class="data-panel shadow-lg">
+                        <h5 class="mb-4 text-primary">Saisie Facture</h5>
+                        <input type="text" id="f-id" class="form-control mb-3" placeholder="Numéro Facture">
+                        <input type="number" id="f-amt" class="form-control mb-3" placeholder="Montant">
+                        <label class="small text-muted mb-1">Document PDF de preuve</label>
+                        <input type="file" id="f-file" class="form-control mb-4" accept="application/pdf,image/*">
+                        <button id="btn-save" onclick="send()" class="btn btn-acc w-100 py-3">SCELLER ON-CHAIN</button>
+                    </div>
+                </div>
+                <div id="table-col" class="col-lg-8">
+                    <div class="data-panel">
+                        <h5 class="mb-4">Registre de Contrôle (Port <span id="port-display"></span>)</h5>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle">
+                                <thead>
+                                    <tr class="text-muted small">
+                                        <th>DATE</th>
+                                        <th>ID</th>
+                                        <th>MAD</th>
+                                        <th>STATUT</th>
+                                        <th>ACTIONS / PROUVE</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tx-rows"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script>
+        let currentPort = 5000;
+        let currentRole = "";
+
+        function auth(role) {
+            let p = prompt("Passcode (Comptable: 111 | Audit: 222):");
+            if ((role === 'comptable' && p === "111") || (role === 'auditeur' && p === "222")) {
+                currentRole = role;
+                currentPort = (role === 'comptable') ? 5000 : 5001;
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-view').style.display = 'block';
+                document.getElementById('role-display').innerText = role.toUpperCase();
+                document.getElementById('port-display').innerText = currentPort;
+                if (role === 'auditeur') {
+                    document.getElementById('input-col').style.display = 'none';
+                    document.getElementById('table-col').className = "col-12";
+                }
+                sync(); setInterval(sync, 4000);
+            }
+        }
+
+        async function send() {
+            const id = document.getElementById('f-id').value;
+            const amt = document.getElementById('f-amt').value;
+            const fileInput = document.getElementById('f-file'); // تأكدي أن الإيد هو f-file
+
+            if (!id || !amt || !fileInput.files[0]) {
+                alert("المرجو ملء جميع الخانات واختيار ملف!");
+                return;
+            }
+
+            // FormData هي الطريقة باش كنصيفطو الملفات من Frontend لـ Backend
+            const formData = new FormData();
+            formData.append('invoice_id', id);
+            formData.append('amount', amt);
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                // كنصيفطو البيانات للسيرفر ديالنا اللي شغال في البورط 3001
+                const response = await fetch('http://localhost:3001/api/upload-full', {
+                    method: 'POST',
+                    body: formData // مكنزيدوش Headers حيت FormData كيديرها بوحدو
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    Toastify({
+                        text: `تم الرفع لـ IPFS! الـ Hash هو: ${result.ipfsHash.substring(0, 10)}...`,
+                        backgroundColor: "#C2F750",
+                        color: "#000"
+                    }).showToast();
+
+                    // مسح الخانات بعد النجاح
+                    document.getElementById('f-id').value = "";
+                    document.getElementById('f-amt').value = "";
+                    fileInput.value = "";
+
+                    sync(); // تحديث الجدول باش تبان الفاتورة الجديدة بالرابط ديال IPFS
+                } else {
+                    alert("خطأ في الرفع: " + result.error);
+                }
+            } catch (e) {
+                console.error("Connection Error:", e);
+                alert("السيرفر (Backend) طافي! تأكدي من تشغيل node server.js");
+            }
+        }
+        async function auditDecision(id, status) {
+            try {
+                await fetch(`http://127.0.0.1:5001/api/v1/namespaces/default/messages/broadcast`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: [{ value: { invoice_id: id, status: status, type: "AUDIT_DECISION" } }] })
+                });
+                Toastify({ text: "Décision enregistrée", backgroundColor: "#5363EE" }).showToast();
+                sync();
+            } catch (e) { alert("Erreur"); }
+        }
+
+        async function sync() {
+            try {
+                // كنجيبو البيانات من البورط 5000 أو 5001 حسب الدور
+                const res = await fetch(`http://127.0.0.1:${currentPort}/api/v1/namespaces/default/messages?limit=20&direction=desc&include=data`);
+                const data = await res.json();
+
+                const body = document.getElementById('tx-rows');
+                if (!body) return;
+                body.innerHTML = "";
+
+                data.forEach(m => {
+                    const v = m.data?.[0]?.value;
+
+                    // كنتأكدو بلي هادي فاتورة مطابقة للقالب ديالنا
+                    if (v && v.invoice_id) {
+                        // إلا كان الرابط ديال IPFS موجود، كديرو ليه زر
+                        const ipfsLink = v.file_ref ?
+                            `<a href="${v.file_ref}" target="_blank" class="btn btn-sm btn-outline-info">
+                        <i class="bi bi-cloud-check"></i> IPFS
+                     </a>` :
+                            `<span class="text-muted small">No File</span>`;
+
+                        const sClass = v.status === "VALIDÉ" ? "status-approved" :
+                            (v.status === "REJETÉ" ? "status-rejected" : "status-pending");
+
+                        body.innerHTML += `
+                    <tr class="align-middle">
+                        <td><small class="text-muted">${new Date(m.header.created).toLocaleTimeString()}</small></td>
+                        <td class="fw-bold">${v.invoice_id}</td>
+                        <td style="color:var(--lime)">${v.amount} MAD</td>
+                        <td><span class="badge-status ${sClass}">${v.status || 'EN ATTENTE'}</span></td>
+                        <td class="d-flex gap-2 align-items-center">
+                            ${ipfsLink}
+                            <code class="text-secondary" style="font-size:0.6rem">${m.header.id.substring(0, 8)}</code>
+                        </td>
+                    </tr>`;
+                    }
+                });
+            } catch (e) {
+                console.error("Sync error:", e);
+            }
+        }
+        // Background Particles
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        let parts = Array.from({ length: 80 }, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, vx: Math.random() * 0.4 - 0.2, vy: Math.random() * 0.4 - 0.2 }));
+        function anim() { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = "rgba(83,99,238,0.2)"; parts.forEach(p => { p.x += p.vx; p.y += p.vy; if (p.x < 0 || p.x > canvas.width) p.vx *= -1; if (p.y < 0 || p.y > canvas.height) p.vy *= -1; ctx.beginPath(); ctx.arc(p.x, p.y, 1, 0, Math.PI * 2); ctx.fill(); }); requestAnimationFrame(anim); }
+        anim();
+    </script>
+</body>
+
+</html>
