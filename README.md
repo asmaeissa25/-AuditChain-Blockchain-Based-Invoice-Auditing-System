@@ -1,4 +1,4 @@
-# 📑 AuditChain: Blockchain-Based Invoice Auditing System
+# 📑AuditTrust AI: Intelligent Internal Audit System using Blockchain and Machine Learning
 
 **Status:** 🚧 Work In Progress (Development Phase)
 
